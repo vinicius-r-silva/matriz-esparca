@@ -158,7 +158,7 @@ int main()
 	Limpa_tela();
 	WaitENTER();
 	int acao;
-	printf("Original: \n");
+	/*printf("Original: \n");
 	Imprime(ListaMatriz, cabecalho);
 	for( acao = 0; acao < 4; acao ++){
 		printf("\n\n");
@@ -167,11 +167,11 @@ int main()
 		Imprime(ListaMatriz, cabecalho);
 		printf("\n\n");
 	}
-	return 0;
+	return 0;*/
 	while (1)
 	{
 		acao = menu_principal();
-		Imprime(ListaMatriz, cabecalho);
+		//Imprime(ListaMatriz, cabecalho);
 		switch (acao)
 		{
 		case 1:
