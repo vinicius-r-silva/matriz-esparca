@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 #define ERRO INT_MIN
+#define TOLERANCIA 0.0001
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +24,7 @@ struct matriz
 	int j;
 	bool Usado;
 	float data;
-	struct matriz *direita;
-	struct matriz *baixo;
+	struct matriz *prox;
 };
 
 struct cabecalho
@@ -54,7 +55,7 @@ void criar_matriz(MATRIZ_PTR *matriz, CABECALHO_PTR *cabecalho);
 //Pergunta uma posicao e mostra o valor dela
 void consultar_valor_pos(MATRIZ_PTR ListaElementos, CABECALHO_PTR cabecalho);
 
-double BuscaValor(MATRIZ_PTR ListaMatriz, int i, int j);
+int BuscaValor(MATRIZ_PTR ListaMatriz, int i, int j);
 
 MATRIZ_PTR BuscaElemento(MATRIZ_PTR ListaMatriz, int i, int j);
 
@@ -63,6 +64,8 @@ void consultar_soma_linha(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho);
 
 //Pergunta ao usuarioo numero de uma coluna, e mostra a soma dela
 void consultar_soma_coluna(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho);
+
+void TrocaLinha(MATRIZ_PTR *ListaMatriz, int Linha_1, int Linha_2);
 
 //------------------------------------------INTERFACE------------------------------------------//
 //Informa ao usuario a descricao do programa e criadores
@@ -86,6 +89,50 @@ int ReadInt(int *numero);
 //Le um float do Stdin
 //Retorna false quando nao foi poss�vel ler nenhum n�mero do buffer, e retorna true quando leu
 int ReadDouble(double *numero);
+
+void Imprime(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){ 
+	MATRIZ_PTR temp = ListaMatriz;
+	while(temp != NULL){
+		printf("%.0lf (%d,%d) -> ", temp->data, temp->i, temp->j);
+		temp = temp->prox;
+	}
+	printf("\n\n");
+
+
+	int Last_i = 0, Last_j = 0;
+	int i, j;
+	while(ListaMatriz != NULL){		
+		while(Last_i != ListaMatriz->i){
+			for(j = Last_j; j < cabecalho->N_Colunas; j++)
+				printf("0  ");
+			Last_j = 0;
+			Last_i++;
+			printf("\n");
+		}
+		
+		for(j = Last_j; j < ListaMatriz->j; j++){
+			printf("0  ");
+			Last_j++;
+		}
+
+		printf("%.0lf  ", ListaMatriz->data);
+		Last_i = ListaMatriz->i;
+		Last_j = ListaMatriz->j;
+		Last_j++;
+		ListaMatriz = ListaMatriz->prox;
+	}
+
+
+	for (j = Last_j; j < cabecalho->N_Colunas; j++)
+		printf("0  ");
+
+	for(i = Last_i; i < cabecalho->N_Linhas - 1; i++){
+		printf("\n");
+		for(j = 0; j < cabecalho->N_Colunas; j++)
+			printf("0  ");
+	}
+	printf("\n\n");
+}
 
 //------------------------------------------MAIN------------------------------------------//
 int main()
@@ -111,9 +158,20 @@ int main()
 	Limpa_tela();
 	WaitENTER();
 	int acao;
+	printf("Original: \n");
+	Imprime(ListaMatriz, cabecalho);
+	for( acao = 0; acao < 4; acao ++){
+		printf("\n\n");
+		printf("Trocando a linha %d com a linha %d\n", acao, 4);
+		TrocaLinha(&ListaMatriz, acao, 4);
+		Imprime(ListaMatriz, cabecalho);
+		printf("\n\n");
+	}
+	return 0;
 	while (1)
 	{
 		acao = menu_principal();
+		Imprime(ListaMatriz, cabecalho);
 		switch (acao)
 		{
 		case 1:
@@ -125,11 +183,11 @@ int main()
 			break;
 
 		case 3:
-			//consultar_soma_linha(ListaMatriz);
+			consultar_soma_linha(ListaMatriz, cabecalho);
 			break;
 
 		case 4:
-			//consultar_soma_coluna(ListaMatriz);
+			consultar_soma_coluna(ListaMatriz, cabecalho);
 			break;
 
 		case 5:
@@ -155,8 +213,14 @@ int main()
 int EntradaLimitadaInt(int min, int max)
 {
 	int c;
-	while (!ReadInt(&c) && (c < min || c > max))
-		printf("Valor invalido. Digite algo entre %d e %d. \nDigite novamente: ", min, max);
+	while (true && !false){
+		while(!ReadInt(&c))
+			printf("Entrada invalida. Digite novamente: ");
+		if(c < min || c > max)
+			printf("Valor invalido. Digite algo entre %d e %d. \nDigite novamente: ", min, max);
+		else
+			break;
+	}
 
 	return c;
 }
@@ -164,12 +228,161 @@ int EntradaLimitadaInt(int min, int max)
 double EntradaLimitadaDouble(double min, double max)
 {
 	double c;
-	while (!ReadDouble(&c) && (c < min || c > max))
-		printf("Valor invalido. Digite algo entre %.4lf e %.4lf. \nDigite novamente: ", min, max);
+	while (true && !false){
+		while(!ReadDouble(&c))
+			printf("Entrada invalida. Digite novamente: ");
+		if(c < (min+TOLERANCIA) || c > (max-TOLERANCIA))
+			printf("Valor invalido. Digite algo entre %.4lf e %.4lf. \nDigite novamente: ", min, max);
+		else
+			break;
+	}
 
 	return c;
 }
-/*
+
+//Refazer, muito ilegivel (mas funciona)
+void TrocaLinha(MATRIZ_PTR *ListaMatriz, int Linha_1, int Linha_2){
+	if(Linha_1 >= Linha_2)
+		return;
+
+	MATRIZ_PTR temp = *ListaMatriz;
+	MATRIZ_PTR Fim1 = NULL,    Fim2 = NULL;
+	MATRIZ_PTR Inicio1 = NULL, Inicio2 = NULL;
+	bool ExisteL1 = false, ExisteL2 = false;
+	bool Elementos_Antes_L1 = false, Elementos_Entre_L1eL2 = false;
+
+	while(temp != NULL && temp->i < Linha_1){
+		Inicio1 = temp;
+		temp = temp->prox;
+	}
+	if(Inicio1 != NULL)
+		Elementos_Antes_L1 = true;
+
+	while(temp != NULL && temp->i == Linha_1){
+		Fim1 = temp;
+		temp->i = Linha_2;
+		temp = temp->prox;	
+	}
+	if(Fim1 != NULL)
+		ExisteL1 = true;
+
+	while(temp != NULL && temp->i < Linha_2){
+		Inicio2 = temp;
+		temp = temp->prox;
+	}
+	if(Inicio2 != NULL)
+		Elementos_Entre_L1eL2 = true;
+
+	while(temp != NULL && temp->i == Linha_2){
+		Fim2 = temp;
+		temp->i = Linha_1;
+		temp = temp->prox;	
+	}
+	if(Fim2 != NULL)
+		ExisteL2 = true;
+
+	if(!ExisteL1 && !ExisteL2)
+		return;
+	if(!Elementos_Entre_L1eL2 && (!ExisteL1 || !ExisteL2))
+		return;
+	
+	MATRIZ_PTR Pos_Fim1 = NULL,    Pos_Fim2 = NULL;
+	MATRIZ_PTR Pos_Inicio1 = NULL, Pos_Inicio2 = NULL;
+
+	if(Elementos_Antes_L1)
+		Pos_Inicio1 = Inicio1->prox;
+	else{
+		Pos_Inicio1 = *ListaMatriz;
+		if(!ExisteL1)
+			Pos_Fim1 = *ListaMatriz;
+	}
+
+	if(Elementos_Entre_L1eL2)
+		Pos_Inicio2 = Inicio2->prox;
+	else{
+		Pos_Inicio2 = Fim1->prox;;
+		if(Elementos_Antes_L1)
+			Inicio1->prox = Pos_Inicio2;
+		else
+			*ListaMatriz = Pos_Inicio2;
+		
+		temp = Fim2->prox;
+		Fim2->prox = Pos_Inicio1;
+		Fim1->prox = temp;
+		return;
+	}
+
+	if(ExisteL1)
+		Pos_Fim1 = Fim1->prox;
+	else if (Elementos_Antes_L1)
+		Pos_Fim1 = Pos_Inicio1;
+
+	if(ExisteL2)
+		Pos_Fim2 = Fim2->prox;
+	else
+		Pos_Fim2 = Pos_Inicio2;
+
+
+	if(ExisteL1){
+		Fim1->prox = Pos_Fim2;
+		Inicio2->prox = Pos_Inicio1;
+	} else
+		Inicio2->prox = Pos_Fim2;
+
+	
+	if(ExisteL2){
+		Fim2->prox = Pos_Fim1;
+		if(Elementos_Antes_L1)
+			Inicio1->prox = Pos_Inicio2;
+		else
+			*ListaMatriz = Pos_Inicio2;
+	} 
+	else{
+		if(Elementos_Antes_L1)
+			Inicio1->prox = Pos_Fim1;
+		else
+			*ListaMatriz = Pos_Fim1;
+	}
+}
+
+//MATRIZ_PTR
+
+int metodoGauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_atual){
+	MATRIZ_PTR temp = *ListaMatriz;
+	MATRIZ_PTR Inicio = temp;
+	if (ListaMatriz == NULL)
+		return 0;
+	
+	while(Inicio != NULL && Inicio->i < linha_atual)
+		Inicio = Inicio->prox;
+
+	if(Inicio == NULL || Inicio->i > linha_atual)
+		return 0;
+	
+	while(Inicio != NULL && Inicio->j < linha_atual){
+		Inicio = Inicio->prox;
+		if(Inicio->prox->i != linha_atual)
+			break;
+	}
+
+	temp = Inicio;
+	if(temp->i > linha_atual || temp->j > linha_atual){
+		while(temp!= NULL && temp->j != linha_atual)
+			temp = temp->prox;
+
+		if(temp == NULL)
+			return 0;
+		
+		TrocaLinha(ListaMatriz, 0, temp->i);
+	}
+
+	temp = Inicio;
+
+
+	return 0;
+}
+
+
 int Determinante(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 {
 	if (cabecalho->N_Colunas == 0 || cabecalho->N_Linhas == 0)
@@ -199,9 +412,9 @@ int Determinante(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 		return valor;
 	}
 
+
 	return 0;
 }
-*/
 
 //cria uma struct de matriz e coloca na Lista de matrizes
 void criar_matriz(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR *cabecalho)
@@ -209,20 +422,12 @@ void criar_matriz(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR *cabecalho)
 	Limpa_tela();
 	int linhas, colunas;
 
+	MATRIZ_PTR atual = *ListaMatriz;
 	MATRIZ_PTR prev = NULL;
-	MATRIZ_PTR linha = NULL;
-	MATRIZ_PTR coluna = *ListaMatriz;
-	while (coluna != NULL)
+	while (atual != NULL)
 	{
-		linha = coluna->direita;
-		while (linha != NULL)
-		{
-			prev = linha;
-			linha = linha->direita;
-			free(prev);
-		}
-		prev = coluna;
-		coluna = coluna->baixo;
+		prev = atual;
+		atual = atual->prox;
 		free(prev);
 	}
 	(*ListaMatriz) = NULL;
@@ -243,35 +448,24 @@ void criar_matriz(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR *cabecalho)
 		atribuir_valor_pos(ListaMatriz, *cabecalho);
 }
 
-double BuscaValor(MATRIZ_PTR ListaMatriz, int i, int j)
+int BuscaValor(MATRIZ_PTR ListaMatriz, int i, int j)
 {
-	MATRIZ_PTR matriz = BuscaElemento(ListaMatriz, i, j);
-	if (matriz == NULL)
+	while (ListaMatriz != NULL && (ListaMatriz->i != i || ListaMatriz->j != j))
+		ListaMatriz = ListaMatriz->prox;
+
+	if (ListaMatriz == NULL)
 		return 0;
 	else
-		return matriz->data;
+		return ListaMatriz->data;
 }
 
 MATRIZ_PTR BuscaElemento(MATRIZ_PTR ListaMatriz, int i, int j)
 {
-	MATRIZ_PTR linha = NULL;
-	MATRIZ_PTR coluna = ListaMatriz;
-	while (coluna != NULL && coluna->j < j)
-		coluna = coluna->baixo;
+	while (ListaMatriz != NULL && (ListaMatriz->i != i || ListaMatriz->j != j))
+		ListaMatriz = ListaMatriz->prox;
 
-	if (coluna == NULL || coluna->j > j)
-		return NULL;
-
-	linha = coluna;
-	while (linha != NULL && linha->i < i)
-		linha = linha->direita;
-
-	if (linha == NULL || linha->i > i)
-		return NULL;
-	else
-		return linha;
+	return ListaMatriz;
 }
-
 
 void InsereElemento(MATRIZ_PTR *ListaMatriz, MATRIZ_PTR NovoElemento)
 {
@@ -281,20 +475,7 @@ void InsereElemento(MATRIZ_PTR *ListaMatriz, MATRIZ_PTR NovoElemento)
 	MATRIZ_PTR atual = *ListaMatriz;
 	MATRIZ_PTR prev = NULL;
 
-	MATRIZ_PTR linha = NULL;
-	MATRIZ_PTR coluna = *ListaMatriz;
-	if (coluna == NULL){
-		*ListaMatriz = NovoElemento;
-		return;
-	} else if (coluna->j > j){
-		NovoElemento->baixo = *ListaMatriz;
-		*ListaMatriz = NovoElemento;
-	} else if (coluna->j == j && coluna->i > i){
-		
-		*ListaMatriz = NovoElemento;
-	}
-
-	while (atual != NULL && (atual->i > i || atual->j > j))
+	while (atual != NULL && (atual->i < i || (atual->i == i && atual->j < j)))
 	{
 		prev = atual;
 		atual = atual->prox;
@@ -307,7 +488,7 @@ void InsereElemento(MATRIZ_PTR *ListaMatriz, MATRIZ_PTR NovoElemento)
 
 	NovoElemento->prox = atual;
 }
-/*
+
 void atribuir_valor_pos(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho)
 {
 	if (cabecalho->N_Colunas == 0)
@@ -325,10 +506,10 @@ void atribuir_valor_pos(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho)
 	while (1)
 	{
 		printf("Digite a linha da posicao: ");
-		i = EntradaLimitadaInt(1, cabecalho->N_Linhas);
+		i = EntradaLimitadaInt(0, cabecalho->N_Linhas - 1);
 
 		printf("Digite a coluna da posicao: ");
-		j = EntradaLimitadaInt(1, cabecalho->N_Colunas);
+		j = EntradaLimitadaInt(0, cabecalho->N_Colunas - 1);
 
 		printf("Digite o valor que deseja atribuir a posicao: ");
 		data = EntradaLimitadaDouble(FLT_MIN, FLT_MAX);
@@ -379,10 +560,10 @@ void consultar_valor_pos(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 	int i = 0, j = 0;
 	double data;
 	printf("Digite o valor da linha que deseja consultar: ");
-	i = EntradaLimitadaInt(1, cabecalho->N_Linhas);
+	i = EntradaLimitadaInt(0, cabecalho->N_Linhas - 1);
 
 	printf("Digite o valor da coluna que deseja consultar: ");
-	j = EntradaLimitadaInt(1, cabecalho->N_Colunas);
+	j = EntradaLimitadaInt(0, cabecalho->N_Colunas - 1);
 
 	//busca o valor na matriz
 	MATRIZ_PTR Elemento = BuscaElemento(ListaMatriz, i, j);
@@ -408,7 +589,7 @@ void consultar_soma_linha(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 	double soma = 0;
 
 	printf("Digite a linha que deseja consultar: ");
-	linha = EntradaLimitadaInt(1, cabecalho->N_Linhas);
+	linha = EntradaLimitadaInt(0, cabecalho->N_Linhas - 1);
 	MATRIZ_PTR Elemento = ListaMatriz;
 
 	while (Elemento != NULL && Elemento->i < linha)
@@ -438,7 +619,7 @@ void consultar_soma_coluna(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 	double soma = 0;
 
 	printf("Digite a coluna que deseja consultar: ");
-	col = EntradaLimitadaInt(1, cabecalho->N_Linhas);
+	col = EntradaLimitadaInt(0, cabecalho->N_Colunas - 1);
 	MATRIZ_PTR Elemento = ListaMatriz;
 
 	while (Elemento != NULL)
@@ -452,7 +633,7 @@ void consultar_soma_coluna(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho)
 	printf("A soma da coluna %d e: %.4lf\n", col, soma);
 	WaitENTER();
 	return;
-}*/
+}
 
 //------------------------------------------INTERFACE------------------------------------------//
 //Informa ao usuario a descricao do programa e criadores
