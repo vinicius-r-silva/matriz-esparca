@@ -350,15 +350,19 @@ void TrocaLinha(MATRIZ_PTR *ListaMatriz, int Linha_1, int Linha_2){
 int metodoGauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_atual){
 	MATRIZ_PTR temp = *ListaMatriz;
 	MATRIZ_PTR Inicio = temp;
+	//Se a matriz estiver fazia, entao a determinante é 0 (necessario aqui?)
 	if (ListaMatriz == NULL)
 		return 0;
 	
+	//Anda na lista até entrar na fila atual
 	while(Inicio != NULL && Inicio->i < linha_atual)
 		Inicio = Inicio->prox;
 
+	//Se a matriz acabou ou passou direto pela linha, retorna que a determinante é 0
 	if(Inicio == NULL || Inicio->i > linha_atual)
 		return 0;
 	
+	//Anda nas colunas, ate a coluna da diagonal principal
 	while(Inicio != NULL && Inicio->j < linha_atual){
 		Inicio = Inicio->prox;
 		if(Inicio->prox->i != linha_atual)
@@ -377,8 +381,6 @@ int metodoGauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_atua
 	}
 
 	temp = Inicio;
-
-
 	return 0;
 }
 
@@ -512,7 +514,7 @@ void atribuir_valor_pos(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho)
 		j = EntradaLimitadaInt(0, cabecalho->N_Colunas - 1);
 
 		printf("Digite o valor que deseja atribuir a posicao: ");
-		data = EntradaLimitadaDouble(FLT_MIN, FLT_MAX);
+		data = EntradaLimitadaDouble((double)INT_MIN, (double)INT_MAX);
 
 		NovoElemento = BuscaElemento(*ListaMatriz, i, j);
 		if (NovoElemento != NULL)
