@@ -316,7 +316,6 @@ void consultar_valor_pos(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){
 	}
 
 	int i = 0, j = 0;
-	double data;
 	printf("Digite o valor da linha que deseja consultar: ");
 	i = EntradaLimitadaInt(0, cabecalho->N_Linhas - 1);
 
@@ -448,7 +447,6 @@ double Multiplicacao_Diagonal(MATRIZ_PTR ListaMatriz, int N_Linhas){
 
 MATRIZ_PTR Elemento_diagonal_gauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_atual, double* Multiplicador){
 	int cont;
-	MATRIZ_PTR Temp;
 	MATRIZ_PTR Inicio;
 	int coluna_atual = linha_atual;
 	Inicio = BuscaElemento(*ListaMatriz, linha_atual, coluna_atual);
@@ -490,7 +488,7 @@ float metodoGauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_at
 
 	temp = Inicio->prox;
 
-	double resto, fator;
+	double resto;
 	while(temp != NULL){
 		if(temp->j == coluna_atual && !SaoIguais(temp->data, 0)){
 			resto = fmod(temp->data, Inicio->data);
@@ -552,9 +550,7 @@ float Determinante(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho){
 		return ERRO;
 	}
 
-	int i;
 	double valor;
-	MATRIZ_PTR Elemento = NULL;
 	if (cabecalho->N_Linhas == 1)
 		return BuscaValor(*ListaMatriz, 1, 1);
 	
@@ -784,8 +780,7 @@ int ReadDouble(double *numero){
 
 
 
-void Imprime(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){ 
-	MATRIZ_PTR temp = ListaMatriz;
+void Imprime(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){
 	int Last_i = 0, Last_j = 0;
 	int i, j;
 	while(ListaMatriz != NULL){		
