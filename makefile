@@ -1,3 +1,3 @@
 all:
-	gcc -Wall matrizEsparca.c -o main -lm
+	gcc -Wall main.c -o main -lm
 
