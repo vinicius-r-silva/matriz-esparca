@@ -135,8 +135,11 @@ int main()
 
 	criar_matriz(&ListaMatriz, &cabecalho);
 	Limpa_tela();
-	//printf("%lf", Determinante(&ListaMatriz, cabecalho));
+	printf("Matriz Original: \n");
+	Imprime(ListaMatriz, cabecalho);
+	printf("%lf", Determinante(&ListaMatriz, cabecalho));
 	WaitENTER();
+	return 0;
 	int acao;
 	while (true && !false)
 	{
@@ -460,7 +463,13 @@ MATRIZ_PTR Elemento_diagonal_gauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabeca
 		return NULL;
 	
 	(*Multiplicador) *= -1;
+
+	printf("Trocando linha %d com a linha %d\n", linha_atual, Inicio->i);
+
 	TrocaLinha(ListaMatriz, linha_atual, Inicio->i);
+	
+	Imprime(*ListaMatriz, cabecalho);
+	printf("\n\n");
 	Inicio = BuscaElemento(*ListaMatriz, linha_atual, linha_atual);
 
 	return Inicio;
@@ -488,9 +497,16 @@ float metodoGauss(MATRIZ_PTR *ListaMatriz, CABECALHO_PTR cabecalho, int linha_at
 			if(!SaoIguais(resto, 0)){
 				multiplicaLinha(temp, Inicio->data);
 				Multiplicador *= Inicio->data;
+				
+				printf("Multiplicando a linha %d, por %.2lf\n", temp->i, Inicio->data);
+				Imprime(*ListaMatriz, cabecalho);
+				printf("\n\n");
 			}
+			printf("Somando na linha %d, a linha %d multiplicada por %.2lf\n", temp->i, Inicio->i, -temp->data/Inicio->data);
 			
 			SomaLinhas(ListaMatriz, temp,  Inicio);
+			Imprime(*ListaMatriz, cabecalho);
+			printf("\n\n");
 		}
 		temp = temp->prox;
 	}
@@ -770,30 +786,28 @@ int ReadDouble(double *numero){
 
 void Imprime(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){ 
 	MATRIZ_PTR temp = ListaMatriz;
-	while(temp != NULL){
-		printf("%.0lf (%d,%d) -> ", temp->data, temp->i, temp->j);
-		temp = temp->prox;
-	}
-	printf("\n\n");
-
-
 	int Last_i = 0, Last_j = 0;
 	int i, j;
 	while(ListaMatriz != NULL){		
 		while(Last_i != ListaMatriz->i){
 			for(j = Last_j; j < cabecalho->N_Colunas; j++)
-				printf("0  ");
+				printf(" 000.0  ");
 			Last_j = 0;
 			Last_i++;
 			printf("\n");
 		}
 		
 		for(j = Last_j; j < ListaMatriz->j; j++){
-			printf("0  ");
+			printf(" 000.0  ");
 			Last_j++;
 		}
 
-		printf("%.0lf  ", ListaMatriz->data);
+		if(SaoIguais(ListaMatriz->data, 0))
+			printf(" 000.0  ");
+		else if (ListaMatriz->data < 0)
+			printf("%06.1f  ", ListaMatriz->data);
+		else
+			printf(" %05.1f  ", ListaMatriz->data);
 		Last_i = ListaMatriz->i;
 		Last_j = ListaMatriz->j;
 		Last_j++;
@@ -802,12 +816,12 @@ void Imprime(MATRIZ_PTR ListaMatriz, CABECALHO_PTR cabecalho){
 
 
 	for (j = Last_j; j < cabecalho->N_Colunas; j++)
-		printf("0  ");
+		printf(" 000.0  ");
 
 	for(i = Last_i; i < cabecalho->N_Linhas - 1; i++){
 		printf("\n");
 		for(j = 0; j < cabecalho->N_Colunas; j++)
-			printf("0  ");
+			printf(" 000.0  ");
 	}
 	printf("\n\n");
 }
